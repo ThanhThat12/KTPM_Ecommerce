@@ -46,5 +46,11 @@ public class Product extends BaseDocument {
     private Map<String, String> attributes = new HashMap<>();
 
     @Builder.Default
+    private double averageRating = 0.0;
+
+    @Builder.Default
+    private int reviewCount = 0;
+
+    @Builder.Default
     private boolean active = true;
 }

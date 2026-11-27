@@ -17,6 +17,8 @@ public record ProductResponse(
         int stockQuantity,
         List<String> imageUrls,
         Map<String, String> attributes,
+        double averageRating,
+        int reviewCount,
         boolean active,
         Instant createdAt
 ) {
@@ -31,6 +33,8 @@ public record ProductResponse(
                 product.getStockQuantity(),
                 product.getImageUrls(),
                 product.getAttributes(),
+                product.getAverageRating(),
+                product.getReviewCount(),
                 product.isActive(),
                 product.getCreatedAt()
         );
