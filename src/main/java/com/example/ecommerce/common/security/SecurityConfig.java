@@ -48,19 +48,35 @@ public class SecurityConfig {
                                         "COMMON_403", "You do not have permission to perform this action"))
                 )
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints
-                        .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/products/**", "/api/categories/**").permitAll()
-
-                        // Admin-only endpoints
-                        .requestMatchers(HttpMethod.POST, "/api/categories", "/api/products", "/api/vouchers").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login", "/api/auth/refresh").permitAll()
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/products/**",
+                                "/api/categories/**",
+                                "/api/search/**",
+                                "/api/reviews/products/**",
+                                "/api/flash-sales",
+                                "/api/shipping/quotes",
+                                "/api/shipping/shipments/track/**",
+                                "/api/media/files/**"
+                        ).permitAll()
+                        .requestMatchers("/api/analytics/**", "/api/audit-logs/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.POST,
+                                "/api/categories",
+                                "/api/products",
+                                "/api/vouchers",
+                                "/api/flash-sales",
+                                "/api/shipping/shipments"
+                        ).hasRole("ADMIN")
                         .requestMatchers(HttpMethod.PUT, "/api/products/**").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.DELETE, "/api/products/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/products/**", "/api/media/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/users", "/api/orders").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PATCH, "/api/users/*/role").hasRole("ADMIN")
-                        .requestMatchers(HttpMethod.PATCH, "/api/orders/*/ship", "/api/orders/*/deliver").hasRole("ADMIN")
-
-                        // All other API endpoints require authentication (CUSTOMER, VIP, or ADMIN)
+                        .requestMatchers(HttpMethod.PATCH,
+                                "/api/users/*/role",
+                                "/api/orders/*/ship",
+                                "/api/orders/*/deliver",
+                                "/api/flash-sales/*/deactivate",
+                                "/api/shipping/shipments/*/tracking"
+                        ).hasRole("ADMIN")
                         .requestMatchers("/api/**").authenticated()
                         .anyRequest().permitAll()
                 )
