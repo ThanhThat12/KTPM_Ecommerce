@@ -3,6 +3,9 @@ package com.example.ecommerce.user.service;
 import com.example.ecommerce.common.exception.BusinessException;
 import com.example.ecommerce.common.exception.ErrorCode;
 import com.example.ecommerce.common.security.JwtService;
+import com.example.ecommerce.common.security.RefreshToken;
+import com.example.ecommerce.common.security.RefreshTokenService;
+import com.example.ecommerce.common.security.TokenBlacklistService;
 import com.example.ecommerce.user.dto.AuthResponse;
 import com.example.ecommerce.user.dto.LoginRequest;
 import com.example.ecommerce.user.dto.RegisterRequest;
@@ -16,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.List;
 
 @Service
@@ -25,6 +29,8 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final RefreshTokenService refreshTokenService;
+    private final TokenBlacklistService tokenBlacklistService;
 
     public AuthResponse register(RegisterRequest request) {
         validateRegistration(request);
@@ -44,7 +50,8 @@ public class UserService {
                 .build();
 
         User saved = userRepository.save(user);
-        return new AuthResponse(jwtService.generateToken(saved), UserResponse.from(saved));
+        RefreshToken refresh = refreshTokenService.createForUser(saved.getId());
+        return new AuthResponse(jwtService.generateToken(saved), refresh.getToken(), UserResponse.from(saved));
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -59,7 +66,24 @@ public class UserService {
             throw new BusinessException(ErrorCode.UNAUTHORIZED, "Invalid email or password");
         }
 
-        return new AuthResponse(jwtService.generateToken(user), UserResponse.from(user));
+        RefreshToken refresh = refreshTokenService.createForUser(user.getId());
+        return new AuthResponse(jwtService.generateToken(user), refresh.getToken(), UserResponse.from(user));
+    }
+
+    public AuthResponse refreshAccessToken(String refreshTokenValue) {
+        if (isBlank(refreshTokenValue)) {
+            throw new BusinessException(ErrorCode.INVALID_REQUEST, "Refresh token is required");
+        }
+        RefreshToken existing = refreshTokenService.verify(refreshTokenValue);
+        User user = getEntityById(existing.getUserId());
+        refreshTokenService.revoke(refreshTokenValue);
+        RefreshToken next = refreshTokenService.createForUser(user.getId());
+        return new AuthResponse(jwtService.generateToken(user), next.getToken(), UserResponse.from(user));
+    }
+
+    public void logout(String userId, String accessToken) {
+        tokenBlacklistService.blacklist(accessToken, Instant.now().plusSeconds(86400));
+        refreshTokenService.revokeAllForUser(userId);
     }
 
     public User getEntityById(String userId) {
