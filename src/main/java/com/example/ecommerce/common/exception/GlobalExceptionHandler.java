@@ -2,6 +2,7 @@ package com.example.ecommerce.common.exception;
 
 import com.example.ecommerce.common.response.ApiResponse;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -25,7 +26,7 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error(errorCode.getCode(), errorCode.getDefaultMessage()));
     }
 
-    @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
+    @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class, HttpMessageNotReadableException.class})
     public ResponseEntity<ApiResponse<Void>> handleBadRequest(RuntimeException ex) {
         ErrorCode errorCode = ErrorCode.INVALID_REQUEST;
         return ResponseEntity
