@@ -1,6 +1,7 @@
 package com.example.ecommerce.user.controller;
 
 import com.example.ecommerce.common.response.ApiResponse;
+import com.example.ecommerce.common.security.AuthenticatedUser;
 import com.example.ecommerce.user.dto.AuthResponse;
 import com.example.ecommerce.user.dto.LoginRequest;
 import com.example.ecommerce.user.dto.RegisterRequest;
@@ -12,6 +13,7 @@ import com.example.ecommerce.user.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -41,6 +43,13 @@ public class UserController {
     @PostMapping("/auth/login")
     public ResponseEntity<ApiResponse<AuthResponse>> login(@RequestBody LoginRequest request) {
         return ResponseEntity.ok(ApiResponse.ok("Login successful", userService.login(request)));
+    }
+
+    @GetMapping("/auth/me")
+    public ResponseEntity<ApiResponse<UserResponse>> getCurrentUser(
+            @AuthenticationPrincipal AuthenticatedUser currentUser
+    ) {
+        return ResponseEntity.ok(ApiResponse.ok(userService.getById(currentUser.getUserId())));
     }
 
     @GetMapping("/users")

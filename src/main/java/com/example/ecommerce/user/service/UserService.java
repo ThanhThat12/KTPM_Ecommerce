@@ -2,6 +2,7 @@ package com.example.ecommerce.user.service;
 
 import com.example.ecommerce.common.exception.BusinessException;
 import com.example.ecommerce.common.exception.ErrorCode;
+import com.example.ecommerce.common.security.JwtService;
 import com.example.ecommerce.user.dto.AuthResponse;
 import com.example.ecommerce.user.dto.LoginRequest;
 import com.example.ecommerce.user.dto.RegisterRequest;
@@ -12,19 +13,18 @@ import com.example.ecommerce.user.model.User;
 import com.example.ecommerce.user.model.UserRole;
 import com.example.ecommerce.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class UserService {
 
     private final UserRepository userRepository;
-    private final PasswordEncoderService passwordEncoder;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
 
     public AuthResponse register(RegisterRequest request) {
         validateRegistration(request);
@@ -44,7 +44,7 @@ public class UserService {
                 .build();
 
         User saved = userRepository.save(user);
-        return new AuthResponse(generateAccessToken(saved), UserResponse.from(saved));
+        return new AuthResponse(jwtService.generateToken(saved), UserResponse.from(saved));
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -59,7 +59,7 @@ public class UserService {
             throw new BusinessException(ErrorCode.UNAUTHORIZED, "Invalid email or password");
         }
 
-        return new AuthResponse(generateAccessToken(user), UserResponse.from(user));
+        return new AuthResponse(jwtService.generateToken(user), UserResponse.from(user));
     }
 
     public User getEntityById(String userId) {
@@ -119,11 +119,6 @@ public class UserService {
         if (isBlank(request.fullName())) {
             throw new BusinessException(ErrorCode.INVALID_REQUEST, "Full name is required");
         }
-    }
-
-    private String generateAccessToken(User user) {
-        String raw = user.getId() + ":" + user.getRole() + ":" + UUID.randomUUID();
-        return Base64.getUrlEncoder().withoutPadding().encodeToString(raw.getBytes(StandardCharsets.UTF_8));
     }
 
     private boolean isBlank(String value) {
